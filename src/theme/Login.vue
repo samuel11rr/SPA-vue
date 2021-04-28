@@ -2,10 +2,6 @@
   <div class="content">
     <div v-if="isAuthenticated">
       Hello, authenticated user!
-
-      <p> Name: {{ profile.firstName }} </p>
-      <p> Favorite sandwich: {{ profile.favoriteSandwich }} </p>
-
       <button @click="logout" class="button is-primary">
         Logout
       </button>
@@ -54,55 +50,28 @@
 </template>
 
 <script>
-import appService from '../app.service.js'
+import { mapGetters, mapActions } from 'vuex'
 
 export default {
   data () {
     return {
       username: '',
-      password: '',
-      isAuthenticated: false,
-      profile: {}
+      password: ''
     }
+  },
+  computed: {
+    ...mapGetters(['isAuthenticated'])
   },
   methods: {
+    ...mapActions({
+      logout: 'logout'
+    }),
     login () {
-      appService.login({
-        username: this.username,
-        password: this.password
-      }).then(data => {
-        window.localStorage.setItem('token', data.token)
-        window.localStorage.setItem('tokenExpiration', data.expiration)
-        this.isAuthenticated = true
-        this.username = ''
-        this.password = ''
-      }).catch(() => window.alert('Could not login!'))
-    },
-    logout () {
-      window.localStorage.setItem('token', null)
-      window.localStorage.setItem('tokenExpiration', null)
-      this.isAuthenticated = false
-    }
-  },
-  created () {
-    let expiration = window.localStorage.getItem('tokenExpiration')
-
-    var unixTimestamp = new Date().getTime() / 1000
-
-    if (expiration !== null && parseInt(expiration) - unixTimestamp > 0) {
-      this.isAuthenticated = true
-    }
-  },
-  watch: {
-    isAuthenticated (newValue) {
-      if (newValue) {
-        appService.getProfile()
-          .then(profile => {
-            this.profile = profile
-          })
-      } else {
-        this.profile = {}
-      }
+      this.$store.dispatch('login', { username: this.username, password: this.password })
+        .then(() => {
+          this.username = ''
+          this.password = ''
+        })
     }
   }
 }
